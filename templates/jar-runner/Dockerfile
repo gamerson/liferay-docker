@@ -1,7 +1,10 @@
 FROM --platform=${TARGETPLATFORM} liferay/jdk11-jdk8:latest AS liferay-jdk11-jdk8
 
 RUN curl -fsSL "https://dl.filippo.io/mkcert/latest?for=linux/$(dpkg --print-architecture)" -o /usr/local/bin/mkcert && \
-	chmod +x /usr/local/bin/mkcert
+  chmod +x /usr/local/bin/mkcert
+	#chmod 755 /usr/local/bin/mkcert && chown root:liferay /etc/ssl/certs/ /usr/local/share/ca-certificates && \
+	#chmod g+w /etc/ssl/certs/ /usr/local/share/ca-certificates 
+	#chmod 4755 /usr/local/bin/mkcert && chmod 4755 /usr/sbin/update-ca-certificates && chmod 1755 /etc/ssl/certs/ 
 
 FROM liferay-jdk11-jdk8
 

@@ -5,6 +5,7 @@ source ./_test_common.sh
 function main {
 	test_liferay_batch_entrypoint_import_task_status
 	test_liferay_batch_entrypoint_polls_with_backoff
+	test_liferay_batch_entrypoint_query_parameters
 	test_liferay_batch_entrypoint_removes_the_items_file
 	test_liferay_batch_entrypoint_reports_completed_with_failed_items
 	test_liferay_batch_entrypoint_reports_poll_http_error
@@ -83,6 +84,13 @@ function test_liferay_batch_entrypoint_polls_with_backoff {
 		"${_TEST_ENTRYPOINT_EXIT_CODE}" "1"
 
 	tear_down
+}
+
+function test_liferay_batch_entrypoint_query_parameters {
+	_test_liferay_batch_entrypoint_query_parameters "{\"className\": \"Foo\", \"parameters\": {\"createStrategy\": \"UPSERT\"}}" "?createStrategy=UPSERT"
+	_test_liferay_batch_entrypoint_query_parameters "{\"className\": \"Foo\", \"parameters\": {\"createStrategy\": \"UPSERT\"}, \"taskItemDelegateName\": \"C_Bar\"}" "?createStrategy=UPSERT&taskItemDelegateName=C_Bar"
+	_test_liferay_batch_entrypoint_query_parameters "{\"className\": \"Foo\", \"parameters\": {\"createStrategy\": \"UPSERT\", \"taskItemDelegateName\": \"C_Bar\"}, \"taskItemDelegateName\": \"C_Bar\"}" "?createStrategy=UPSERT&taskItemDelegateName=C_Bar"
+	_test_liferay_batch_entrypoint_query_parameters "{\"callbackURL\": \"http://localhost/callback\", \"className\": \"Foo\", \"fieldNameMappingMap\": {\"a\": \"b\", \"c\": \"d\"}}" "?callbackURL=http%3A%2F%2Flocalhost%2Fcallback&fieldNameMapping=a%3Db%2Cc%3Dd"
 }
 
 function test_liferay_batch_entrypoint_removes_the_items_file {
@@ -241,6 +249,18 @@ function _test_liferay_batch_entrypoint_import_task_status {
 	_TEST_ENTRYPOINT_EXIT_CODE=${?}
 
 	assert_equals "${_TEST_ENTRYPOINT_EXIT_CODE}" "${2}"
+
+	tear_down
+}
+
+function _test_liferay_batch_entrypoint_query_parameters {
+	set_up
+
+	echo "{\"configuration\": ${1}, \"items\": [{\"name\": \"x\"}]}" > "${_TEST_FIXTURE_DIR}/batch/00-test.batch-engine-data.json"
+
+	_TEST_ENTRYPOINT_OUTPUT=$(_run_entrypoint)
+
+	assert_equals "$(echo "${_TEST_ENTRYPOINT_OUTPUT}" | grep "^Parameters: ")" "Parameters: ${2}"
 
 	tear_down
 }
